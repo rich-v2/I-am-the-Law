@@ -33,10 +33,12 @@ def get_law(law,section,paragraph):
 # Übersicht über Urteile
 def get_verdicts(law,section):
 
-    def filter_verdicts(year):
+    def filter_verdicts(pattern):
         verdict_widget.delete(0,tk.END)
-        for key in verdicts.keys():
-            if re.search(year,key):
+        for key,value in tips.items():
+            if re.search(pattern,key):
+                verdict_widget.insert(tk.END,key)
+            if re.search(pattern,value):
                 verdict_widget.insert(tk.END,key)
     
     def goto_verdict(verdictlink):
@@ -119,7 +121,7 @@ def get_verdicts(law,section):
         #webbrowser.open("https://dejure.org/" + verdicts[verdict_widget.get(verdict_widget.curselection())]))
     b2.place(relx=0.5, rely=0.5,relwidth=0.5,relheight=0.5)
 
-    l3 = tk.Button(interact_frame, text= "Filter nach Jahr", command= lambda: filter_verdicts(b3.get()))
+    l3 = tk.Button(interact_frame, text= "Zu viel! Filter nach", command= lambda: filter_verdicts(b3.get()))
     l3.place(relx=0, relwidth=0.5,relheight=0.5)
     
     b3 = tk.Entry(interact_frame,text= "Year")
