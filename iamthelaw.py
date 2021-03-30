@@ -2,6 +2,7 @@
 
 # Crawler
 import requests, bs4, os, re
+import io
 import webbrowser
 import time
 import keyboard
@@ -72,6 +73,16 @@ def get_verdicts(law,section):
         goto_link = "https://dejure.org/" + goto.get("href")
 
         webbrowser.open(goto_link)
+
+        res_verdict_text = requests.get(goto_link)
+
+        chunksize = 10000
+        os.makedirs("./Verdicts", exist_ok=True)
+        filename = verdict_widget.get(verdict_widget.curselection()).replace(".","-").replace(",","-").replace(" ","").replace("/","-")
+
+        with io.open(os.path.join("Verdicts", filename + ".html"), "w+", encoding = "UTF8") as f:
+            #for chunk in res_verdict_text.iter_content(chunk_size=chunksize):
+                f.write(res_verdict_text.text)
 
     def reset_verdicts():
         verdict_widget.delete(0,tk.END)
