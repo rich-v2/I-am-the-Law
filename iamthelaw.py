@@ -46,7 +46,7 @@ def get_law(law,section,paragraph):
 
 # Übersicht über Urteile
 def get_verdicts(law,section):
-    print("Getting verdicts...")
+
     def filter_verdicts(pattern):
         filter_count = 0
         verdict_widget.delete(0,tk.END)
@@ -69,20 +69,24 @@ def get_verdicts(law,section):
         VerdictSoup = bs4.BeautifulSoup(res_verdict.text, features="lxml")
 
         goto = VerdictSoup.find("a", class_="link_extern")
-        print(goto)
+        #print(goto)
         goto_link = "https://dejure.org/" + goto.get("href")
 
         webbrowser.open(goto_link)
 
         res_verdict_text = requests.get(goto_link)
+        res_verdict_text.encoding = 'utf-8'
 
         chunksize = 10000
         os.makedirs("./Verdicts", exist_ok=True)
         filename = verdict_widget.get(verdict_widget.curselection()).replace(".","-").replace(",","-").replace(" ","").replace("/","-")
 
-        with io.open(os.path.join("Verdicts", filename + ".html"), "w+", encoding = "UTF8") as f:
+        with io.open(os.path.join("Verdicts", filename + ".html"), "w+", encoding = "utf8") as f:
             #for chunk in res_verdict_text.iter_content(chunk_size=chunksize):
-                f.write(res_verdict_text.text)
+            f.write(res_verdict_text.text)
+                #f.write(chunk)
+
+        tooltip.set("Verdict saved to file.")
 
     def reset_verdicts():
         verdict_widget.delete(0,tk.END)
@@ -93,7 +97,7 @@ def get_verdicts(law,section):
         tooltip.set("Ich habe " + str(len(verdicts)) + " Urteile gefunden.")
 
 
-    text_box.insert("1.0", "Getting verdicts from page 1...\n")
+    text_box.insert(tk.END, "Getting verdicts from page 1...\n")
     url = "https://dejure.org/dienste/lex/" + law + "/" + section + "/1.html"
 
     res = requests.get(url)
@@ -123,11 +127,11 @@ def get_verdicts(law,section):
             if keyboard.is_pressed("esc"):
                 keep_going = False
                 print("Operation terminated by user.")
-                text_box.insert("1.0", "Operation terminated by user.\n")
+                text_box.insert(tk.END, "Operation terminated by user.\n")
                 
 
-            text_box.insert("1.0", "Getting verdicts from page " + str(i) + "...\n")
-            text_box.insert("1.0", "Press Escape to stop.\n")
+            text_box.insert(tk.END, "Getting verdicts from page " + str(i) + "...\n")
+            text_box.insert(tk.END, "Press Escape to stop.\n")
             url = "https://dejure.org/dienste/lex/" + law + "/" + section + "/" + str(i) + ".html"
 
             res = requests.get(url)
@@ -139,10 +143,10 @@ def get_verdicts(law,section):
             links = ArticleSoup.select('li[style="margin-bottom:8px;"]')
 
             if not links:
-                text_box.insert("2.0", "Failure. No more pages.\n")
+                text_box.insert(tk.END, "Failure. No more pages.\n")
                 keep_going = False
             else: 
-                text_box.insert("2.0", "Success.\n")
+                text_box.insert(tk.END, "Success.\n")
 
             for l in links:
                 verdicts[l.a.getText()] = l.a.get("href")
@@ -183,7 +187,7 @@ def get_verdicts(law,section):
         tips[verdict_widget.get(verdict_widget.curselection())]))
     b1.place(rely=0.5, relwidth=0.5,relheight=0.5)
 
-    b2 = tk.Button(interact_frame,text = "Zum Urteil!", command=lambda: goto_verdict(verdicts[verdict_widget.get(verdict_widget.curselection())]))
+    b2 = tk.Button(interact_frame,text = "Zum Urteil!/Speichern als HTML!", command=lambda: goto_verdict(verdicts[verdict_widget.get(verdict_widget.curselection())]))
         #webbrowser.open("https://dejure.org/" + verdicts[verdict_widget.get(verdict_widget.curselection())]))
     b2.place(relx=0.5, rely=0.5,relwidth=0.5,relheight=0.5)
 
