@@ -4,6 +4,7 @@
 import requests, bs4, os, re
 import webbrowser
 import time
+import keyboard
 
 # GUI
 #from tkinter import HtmlFrame
@@ -12,11 +13,10 @@ from tkinter import ttk
 import threading
 
 def get_law(law,section,paragraph):
-    url = "https://dejure.org/gesetze/" + law + "/"
+    url = "https://dejure.org/gesetze/" + law
     
     if section != "":
-        url += "/" + section
-    url += ".html"
+        url += "/" + section + ".html"
 
     res = requests.get(url)
     res.raise_for_status()
@@ -65,9 +65,10 @@ def get_verdicts(law,section):
         res_verdict.raise_for_status()
         time.sleep(1)
 
-        VerdictSoup = bs4.BeautifulSoup(res_verdict.text)
+        VerdictSoup = bs4.BeautifulSoup(res_verdict.text, features="lxml")
 
-        goto = VerdictSoup.find("a", class_="extlink")
+        goto = VerdictSoup.find("a", class_="link_extern")
+        print(goto)
         goto_link = "https://dejure.org/" + goto.get("href")
 
         webbrowser.open(goto_link)
@@ -107,7 +108,15 @@ def get_verdicts(law,section):
         keep_going = True
         while keep_going:
             print("Getting verdicts from page",i)
+
+            if keyboard.is_pressed("esc"):
+                keep_going = False
+                print("Operation terminated by user.")
+                text_box.insert("1.0", "Operation terminated by user.\n")
+                
+
             text_box.insert("1.0", "Getting verdicts from page " + str(i) + "...\n")
+            text_box.insert("1.0", "Press Escape to stop.\n")
             url = "https://dejure.org/dienste/lex/" + law + "/" + section + "/" + str(i) + ".html"
 
             res = requests.get(url)
