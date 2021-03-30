@@ -20,16 +20,24 @@ def get_law(law,section,paragraph):
 
     ArticleSoup = bs4.BeautifulSoup(res.text, features="lxml")
 
-    title = ArticleSoup.find("h1")
-    text_box.insert(tk.END,title.getText("\n")+ "\n\n")
+    if section == "":
+        head = ArticleSoup.find("div", id="headgesetz")
+        text_box.insert(tk.END,head.getText())
 
-    gesetzestext = ArticleSoup.find(id="gesetzestext")
+        body = ArticleSoup.find("div", class_="gesetzestext")
+        text_box.insert(tk.END,body.getText())
 
-    # If paragraph is not specified, give entire section
-    if paragraph == "":
-        text_box.insert(tk.END,gesetzestext.getText())
     else:
-        text_box.insert(tk.END, gesetzestext.find_all("p")[int(paragraph)-1].getText() +"\n")
+        title = ArticleSoup.find("h1")
+        text_box.insert(tk.END,title.getText("\n")+ "\n\n")
+
+        gesetzestext = ArticleSoup.find(id="gesetzestext")
+
+        # If paragraph is not specified, give entire section
+        if paragraph == "":
+            text_box.insert(tk.END,gesetzestext.getText())
+        else:
+            text_box.insert(tk.END, gesetzestext.find_all("p")[int(paragraph)-1].getText() +"\n")
 
 # Übersicht über Urteile
 def get_verdicts(law,section):
