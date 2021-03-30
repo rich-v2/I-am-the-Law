@@ -3,6 +3,7 @@
 # Crawler
 import requests, bs4, os, re
 import webbrowser
+import time
 
 # GUI
 #from tkinter import HtmlFrame
@@ -12,11 +13,14 @@ import threading
 
 def get_law(law,section,paragraph):
     url = "https://dejure.org/gesetze/" + law + "/"
-        
-    url += section + ".html"
+    
+    if section != "":
+        url += "/" + section
+    url += ".html"
 
     res = requests.get(url)
     res.raise_for_status()
+    time.sleep(1)
 
     ArticleSoup = bs4.BeautifulSoup(res.text, features="lxml")
 
@@ -59,6 +63,7 @@ def get_verdicts(law,section):
 
         res_verdict = requests.get(url_verdict)
         res_verdict.raise_for_status()
+        time.sleep(1)
 
         VerdictSoup = bs4.BeautifulSoup(res_verdict.text)
 
@@ -73,11 +78,15 @@ def get_verdicts(law,section):
         for l in verdicts.keys():
             verdict_widget.insert(tk.END,l)
 
+        tooltip.set("Ich habe " + str(len(verdicts)) + " Urteile gefunden.")
+
+
     text_box.insert("1.0", "Getting verdicts from page 1...\n")
     url = "https://dejure.org/dienste/lex/" + law + "/" + section + "/1.html"
 
     res = requests.get(url)
     res.raise_for_status()
+    time.sleep(1)
 
     ArticleSoup = bs4.BeautifulSoup(res.text, features="lxml")
 
@@ -103,6 +112,7 @@ def get_verdicts(law,section):
 
             res = requests.get(url)
             res.raise_for_status()
+            time.sleep(1)
 
             ArticleSoup = bs4.BeautifulSoup(res.text, features="lxml")
 
