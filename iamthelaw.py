@@ -8,6 +8,7 @@ import webbrowser
 #from tkinter import HtmlFrame
 import tkinter as tk 
 from tkinter import ttk
+import threading
 
 def get_law(law,section,paragraph):
     url = "https://dejure.org/gesetze/" + law + "/"
@@ -32,14 +33,18 @@ def get_law(law,section,paragraph):
 
 # Übersicht über Urteile
 def get_verdicts(law,section):
-
+    print("Getting verdicts...")
     def filter_verdicts(pattern):
+        filter_count = 0
         verdict_widget.delete(0,tk.END)
         for key,value in tips.items():
             if re.search(pattern,key):
                 verdict_widget.insert(tk.END,key)
+                filter_count += 1
             if re.search(pattern,value):
                 verdict_widget.insert(tk.END,key)
+                filter_count += 1
+        tooltip.set("Ich habe " + str(filter_count) + " Urteile gefunden.")
     
     def goto_verdict(verdictlink):
         url_verdict = "https://dejure.org/" + verdictlink
@@ -54,6 +59,13 @@ def get_verdicts(law,section):
 
         webbrowser.open(goto_link)
 
+    def reset_verdicts():
+        verdict_widget.delete(0,tk.END)
+
+        for l in verdicts.keys():
+            verdict_widget.insert(tk.END,l)
+
+    text_box.insert("1.0", "Getting verdicts from page 1...\n")
     url = "https://dejure.org/dienste/lex/" + law + "/" + section + "/1.html"
 
     res = requests.get(url)
@@ -62,6 +74,9 @@ def get_verdicts(law,section):
     ArticleSoup = bs4.BeautifulSoup(res.text, features="lxml")
 
     links = ArticleSoup.select('li[style="margin-bottom:8px;"]')
+
+    if links:
+        text_box.insert("2.0", "Success.\n")
 
     verdicts = dict()
     tips = dict()
@@ -72,7 +87,10 @@ def get_verdicts(law,section):
     # Verdict window
     try:
         i = 2
-        while i <= 30:
+        keep_going = True
+        while keep_going:
+            print("Getting verdicts from page",i)
+            text_box.insert("1.0", "Getting verdicts from page " + str(i) + "...\n")
             url = "https://dejure.org/dienste/lex/" + law + "/" + section + "/" + str(i) + ".html"
 
             res = requests.get(url)
@@ -81,6 +99,12 @@ def get_verdicts(law,section):
             ArticleSoup = bs4.BeautifulSoup(res.text, features="lxml")
 
             links = ArticleSoup.select('li[style="margin-bottom:8px;"]')
+
+            if not links:
+                text_box.insert("2.0", "Failure. No more pages.\n")
+                keep_going = False
+            else: 
+                text_box.insert("2.0", "Success.\n")
 
             for l in links:
                 verdicts[l.a.getText()] = l.a.get("href")
@@ -99,7 +123,11 @@ def get_verdicts(law,section):
     verdict_frame.place(relx=0.5, rely=0.05, relwidth = 0.9, relheight=0.4, anchor = "n")
 
     verdict_widget = tk.Listbox(verdict_frame)
-    verdict_widget.place(relwidth=1,relheight=1)
+    verdict_widget.place(relwidth=0.975,relheight=1)
+    scrollb2 = tk.Scrollbar(verdict_frame, command = verdict_widget.yview)
+    scrollb2.place(relx = 0.975,relwidth = 0.025,relheight=1)
+    verdict_widget['yscrollcommand'] = scrollb2.set
+
     for l in verdicts.keys():
         verdict_widget.insert(tk.END,l)
 
@@ -122,12 +150,17 @@ def get_verdicts(law,section):
     b2.place(relx=0.5, rely=0.5,relwidth=0.5,relheight=0.5)
 
     l3 = tk.Button(interact_frame, text= "Zu viel! Filter nach", command= lambda: filter_verdicts(b3.get()))
-    l3.place(relx=0, relwidth=0.5,relheight=0.5)
+    l3.place(relx=0, relwidth=0.333,relheight=0.5)
     
     b3 = tk.Entry(interact_frame,text= "Year")
-    b3.place(relx=0.5, relwidth=0.5,relheight=0.5)
+    b3.place(relx=0.333, relwidth=0.333,relheight=0.5)
 
+    b4 = tk.Button(interact_frame, text="Reset", command = lambda: reset_verdicts())
+    b4.place(relx=0.666, relwidth=0.333,relheight=0.5)
 
+def thread_verdicts(law,section):
+    t = threading.Thread(target=get_verdicts,args=[law,section])
+    t.start()
 
 
 # Awesome GUI
@@ -166,7 +199,7 @@ if __name__== "__main__":
 
     WIDGETS_R2 = [tk.Button(control_frame, text = "Hol mir den Gesetzestext!", command = lambda: get_law(WIDGETS_R1[1].get(), \
         WIDGETS_R1[3].get(),WIDGETS_R1[5].get())), tk.Button(control_frame, text = "Zeig mir Urteile!", \
-            command=lambda:get_verdicts(WIDGETS_R1[1].get(), WIDGETS_R1[3].get())), \
+            command=lambda:thread_verdicts(WIDGETS_R1[1].get(), WIDGETS_R1[3].get())), \
                 tk.Button(control_frame, text = "Räum mal auf hier!", command=lambda: text_box.delete("1.0",tk.END))]
 
     for num, lab in enumerate(WIDGETS_R1):
